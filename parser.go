@@ -65,13 +65,11 @@ func parseFile(fileLocation string) ([]namespace, error) {
 		return toReturn, err
 	}
 
-	fullRegex := regexp.MustCompile(`Namespace\s*[\n\r]*-+[\n\r]+?(Name[\s\S]+?Total Number of Clients Connected to Namespace: [0-9]+[\n\r]+?)`)
-	namespaceRegex := regexp.MustCompile(`(Name[\s\S]*?)[\n\r]+?[\n\r]+?`)
+	fullRegex := regexp.MustCompile(`Namespace\s*[\r]*-+[\r]+?(Name[\s\S]+?Total Number of Clients Connected to Namespace: [0-9]+[\r]+?)`)
+	namespaceRegex := regexp.MustCompile(`(Name[\s\S]*?)[\n\r]+?[\r]+?`)
 	clientRegex := regexp.MustCompile(`(ClientId[\s\S]*?Network .+)`)
 
 	matches := fullRegex.FindAllStringSubmatch(value, -1)
-
-	log.Printf("Found matches: %+v\n", matches)
 
 	for _, v := range matches {
 		namespaceMatch := namespaceRegex.FindString(v[1])
@@ -134,7 +132,7 @@ func postToSearch(b []byte, address string) error {
 	if err != nil {
 		panic(err)
 	}
-	log.Printf("%s\n", by)
+	log.Printf("Response: %s\n", by)
 
 	return nil
 }
@@ -151,7 +149,7 @@ func main() {
 		panic(err)
 	}
 	configuration = c
-	log.Printf("Configuration: %+v\n", configuration)
+	//log.Printf("Configuration: %+v\n", configuration)
 	values, err := parseFile(*FileLocation)
 
 	for _, namespace := range values {
@@ -159,16 +157,16 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
-		log.Printf("%s\n", b)
+		log.Print("Sending Namespace to ES\n", b)
 		err = postToSearch(b, configuration.PostAddress)
-
+		log.Print("Sending Clients to ES\n", b)
 		for _, client := range namespace.Clients {
 			client["Timestamp"] = time.Now().String()
 			b, err := json.Marshal(&client)
 			if err != nil {
 				panic(err)
 			}
-			log.Printf("%s\n", b)
+
 			err = postToSearch(b, configuration.PostClientAddress)
 		}
 	}
