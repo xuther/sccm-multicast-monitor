@@ -66,8 +66,8 @@ func parseFile(fileLocation string) ([]namespace, error) {
 
 	fmt.Printf("Values read in: \n %s\n", value)
 
-	fullRegex := regexp.MustCompile(`Namespace\s*\n*-+\n(Name[\s\S]+?Total Number of Clients Connected to Namespace: [0-9]+\n)`)
-	namespaceRegex := regexp.MustCompile(`(Name[\s\S]*?)\n\n`)
+	fullRegex := regexp.MustCompile(`Namespace\s*[\n\r]*-+[\n\r]+?(Name[\s\S]+?Total Number of Clients Connected to Namespace: [0-9]+[\n\r]+?)`)
+	namespaceRegex := regexp.MustCompile(`(Name[\s\S]*?)[\n\r]+?[\n\r]+?`)
 	clientRegex := regexp.MustCompile(`(ClientId[\s\S]*?Network .+)`)
 
 	matches := fullRegex.FindAllStringSubmatch(value, -1)
