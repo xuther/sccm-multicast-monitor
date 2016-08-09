@@ -4,9 +4,10 @@ import (
 	"bytes"
 	"encoding/json"
 	"flag"
-	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
+	"os"
 	"regexp"
 	"strings"
 	"time"
@@ -30,7 +31,7 @@ func importConfig(configPath string) (config, error) {
 
 	var configurationData config
 
-	fmt.Printf("Importing the configuration information from %v\n", configPath)
+	log.Printf("Importing the configuration information from %v\n", configPath)
 
 	f, err := ioutil.ReadFile(configPath)
 	if err != nil {
@@ -42,7 +43,7 @@ func importConfig(configPath string) (config, error) {
 		return configurationData, err
 	}
 
-	fmt.Printf("\n%+v\n", configurationData)
+	log.Printf("\n%+v\n", configurationData)
 
 	return configurationData, nil
 }
@@ -64,15 +65,13 @@ func parseFile(fileLocation string) ([]namespace, error) {
 		return toReturn, err
 	}
 
-	fmt.Printf("Values read in: \n %s\n", value)
-
 	fullRegex := regexp.MustCompile(`Namespace\s*[\n\r]*-+[\n\r]+?(Name[\s\S]+?Total Number of Clients Connected to Namespace: [0-9]+[\n\r]+?)`)
 	namespaceRegex := regexp.MustCompile(`(Name[\s\S]*?)[\n\r]+?[\n\r]+?`)
 	clientRegex := regexp.MustCompile(`(ClientId[\s\S]*?Network .+)`)
 
 	matches := fullRegex.FindAllStringSubmatch(value, -1)
 
-	fmt.Printf("Found matches: %+v\n", matches)
+	log.Printf("Found matches: %+v\n", matches)
 
 	for _, v := range matches {
 		namespaceMatch := namespaceRegex.FindString(v[1])
@@ -120,13 +119,13 @@ func parseFile(fileLocation string) ([]namespace, error) {
 var configuration config
 
 func postToSearch(b []byte, address string) error {
-	fmt.Printf("Post address: %s\n", configuration.PostAddress)
+	log.Printf("Post address: %s\n", configuration.PostAddress)
 	resp, err := http.Post(address, "application/json", bytes.NewReader(b))
 
-	fmt.Printf("%s\n", b)
+	log.Printf("%s\n", b)
 
 	if err != nil {
-		fmt.Printf("Error: %s\n", err.Error())
+		log.Printf("Error: %s\n", err.Error())
 		panic(err)
 	}
 
@@ -135,7 +134,7 @@ func postToSearch(b []byte, address string) error {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Printf("%s\n", by)
+	log.Printf("%s\n", by)
 
 	return nil
 }
@@ -145,12 +144,14 @@ func main() {
 	var FileLocation = flag.String("file", "./info.txt", "The location of the information to parse")
 	flag.Parse()
 
+	log.SetOutput(os.Stdout)
+
 	c, err := importConfig(*ConfigFileLocation)
 	if err != nil {
 		panic(err)
 	}
 	configuration = c
-	fmt.Printf("Configuration: %+v\n", configuration)
+	log.Printf("Configuration: %+v\n", configuration)
 	values, err := parseFile(*FileLocation)
 
 	for _, namespace := range values {
@@ -158,7 +159,7 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
-		fmt.Printf("%s\n", b)
+		log.Printf("%s\n", b)
 		err = postToSearch(b, configuration.PostAddress)
 
 		for _, client := range namespace.Clients {
@@ -167,7 +168,7 @@ func main() {
 			if err != nil {
 				panic(err)
 			}
-			fmt.Printf("%s\n", b)
+			log.Printf("%s\n", b)
 			err = postToSearch(b, configuration.PostClientAddress)
 		}
 	}
