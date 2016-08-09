@@ -64,6 +64,8 @@ func parseFile(fileLocation string) ([]namespace, error) {
 		return toReturn, err
 	}
 
+	fmt.Printf("Values read in: \n %s\n", value)
+
 	fullRegex := regexp.MustCompile(`Namespace\s*\n*-+\n(Name[\s\S]+?Total Number of Clients Connected to Namespace: [0-9]+\n)`)
 	namespaceRegex := regexp.MustCompile(`(Name[\s\S]*?)\n\n`)
 	clientRegex := regexp.MustCompile(`(ClientId[\s\S]*?Network .+)`)
@@ -148,7 +150,7 @@ func main() {
 	configuration = c
 	fmt.Printf("Configuration: %+v\n", configuration)
 	values, err := parseFile(*FileLocation)
-	
+
 	for _, namespace := range values {
 		b, err := json.Marshal(&namespace)
 		if err != nil {
