@@ -72,6 +72,8 @@ func parseFile(fileLocation string) ([]namespace, error) {
 
 	matches := fullRegex.FindAllStringSubmatch(value, -1)
 
+	fmt.Printf("Found matches: %+v\n", matches)
+
 	for _, v := range matches {
 		namespaceMatch := namespaceRegex.FindString(v[1])
 		values := strings.Split(v[1], "*******************************************************************************")
