@@ -75,6 +75,8 @@ func parseFile(fileLocation string) ([]namespace, error) {
 
 	matches := fullRegex.FindAllStringSubmatch(value, -1)
 
+	clientsFound := 0
+
 	if debug {
 		log.Printf("Matches found: %+v\n", matches)
 	}
@@ -106,6 +108,7 @@ func parseFile(fileLocation string) ([]namespace, error) {
 			clientMap := make(map[string]string)
 
 			for _, v3 := range clientValues {
+				clientsFound = clientsFound + 1
 				keyValue := strings.SplitN(v3, ":", 2)
 
 				clientMap[keyValue[0]] = keyValue[1]
@@ -128,6 +131,8 @@ func parseFile(fileLocation string) ([]namespace, error) {
 		}
 		toReturn = append(toReturn, namespace{Values: namespaceMap, Clients: clientMaps, TimeStamp: time.Now()})
 	}
+
+	output.Printf("%v client found.\n", clientsFound)
 
 	return toReturn, nil
 }
@@ -155,15 +160,30 @@ func postToSearch(b []byte, address string) error {
 	return nil
 }
 
+func setLocalOutput(localFileNameForOutput string) error {
+
+	f, err := os.OpenFile(localFileNameForOutput, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0777)
+
+	if err != nil {
+		return err
+	}
+
+	output = log.New(f, "", log.Ldate|log.Ltime)
+	return nil
+}
+
+var output *log.Logger
 var debug = false
 
 func main() {
 	var ConfigFileLocation = flag.String("config", "./config.json", "The locaton of the config file.")
 	var FileLocation = flag.String("file", "./info.txt", "The location of the information to parse")
 	var Debug = flag.Bool("debug", false, "PrintDebuggingInfo true or false")
+	var LocalOutput = flag.String("out", "./localOutput.txt", "The location to put local output for the log file.")
 	flag.Parse()
 
 	log.SetOutput(os.Stdout)
+	setLocalOutput(*LocalOutput)
 
 	debug = *Debug
 
@@ -184,6 +204,8 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
+		output.Printf("%s\n", b) //output to local file
+
 		log.Print("Sending Namespace to ES\n", b)
 		err = postToSearch(b, configuration.PostAddress)
 		log.Print("Sending Clients to ES\n", b)
