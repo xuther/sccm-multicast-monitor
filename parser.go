@@ -103,13 +103,13 @@ func parseFile(fileLocation string) ([]namespace, error) {
 			if debug {
 				log.Printf("Found Client: %+v\n", client)
 			}
-
+			clientsFound = clientsFound + 1
 			clientValues := strings.Split(client, "\n")
 
 			clientMap := make(map[string]string)
 
 			for _, v3 := range clientValues {
-				clientsFound = clientsFound + 1
+
 				keyValue := strings.SplitN(v3, ":", 2)
 
 				clientMap[keyValue[0]] = keyValue[1]
