@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"flag"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -161,11 +162,25 @@ func postToSearch(b []byte, address string) error {
 }
 
 func setLocalOutput(localFileNameForOutput string) error {
+	if debug {
+		fmt.Printf("Setting file for local output %s\n", localFileNameForOutput)
+	}
 
-	f, err := os.OpenFile(localFileNameForOutput, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0777)
+	if _, err := os.Stat(localFileNameForOutput); os.IsNotExist(err) {
+		os.Create(localFileNameForOutput)
+		if debug {
+			log.Printf("Created File\n")
+		}
+	}
+
+	f, err := os.OpenFile(localFileNameForOutput, os.O_APPEND|os.O_WRONLY, 0666)
 
 	if err != nil {
 		return err
+	}
+
+	if debug {
+		log.Printf("Opened File for appending\n")
 	}
 
 	output = log.New(f, "", log.Ldate|log.Ltime)
@@ -182,10 +197,10 @@ func main() {
 	var LocalOutput = flag.String("out", "./localOutput.txt", "The location to put local output for the log file.")
 	flag.Parse()
 
+	debug = *Debug
+
 	log.SetOutput(os.Stdout)
 	setLocalOutput(*LocalOutput)
-
-	debug = *Debug
 
 	if debug {
 		log.Printf("Debugging turned on.\n")
