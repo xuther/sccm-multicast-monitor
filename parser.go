@@ -65,22 +65,40 @@ func parseFile(fileLocation string) ([]namespace, error) {
 		return toReturn, err
 	}
 
-	fullRegex := regexp.MustCompile(`Namespace\s*[\r]*-+[\r]+?(Name[\s\S]+?Total Number of Clients Connected to Namespace: [0-9]+[\r]+?)`)
+	if debug {
+		log.Printf("Value read in from file: %s\n", value)
+	}
+
+	fullRegex := regexp.MustCompile(`Namespace\s*[\n\r]*-+[\n\r]+?(Name[\s\S]+?Total Number of Clients Connected to Namespace: [0-9]+[\n\r]+?)`)
 	namespaceRegex := regexp.MustCompile(`(Name[\s\S]*?)[\n\r]+?[\r]+?`)
 	clientRegex := regexp.MustCompile(`(ClientId[\s\S]*?Network .+)`)
 
 	matches := fullRegex.FindAllStringSubmatch(value, -1)
 
+	if debug {
+		log.Printf("Matches found: %+v\n", matches)
+	}
+
 	for _, v := range matches {
 		namespaceMatch := namespaceRegex.FindString(v[1])
+		if debug {
+			log.Printf("Namespace found: %+v\n", namespaceMatch)
+		}
+
 		values := strings.Split(v[1], "*******************************************************************************")
+		if debug {
+			log.Printf("Strings split: %+v\n", values)
+		}
 
 		var clientMaps []map[string]string
-
 		for _, v2 := range values {
 			client := clientRegex.FindString(v2)
 			if len(client) < 1 {
 				continue
+			}
+
+			if debug {
+				log.Printf("Found Client: %+v\n", client)
 			}
 
 			clientValues := strings.Split(client, "\n")
@@ -137,12 +155,21 @@ func postToSearch(b []byte, address string) error {
 	return nil
 }
 
+var debug = false
+
 func main() {
 	var ConfigFileLocation = flag.String("config", "./config.json", "The locaton of the config file.")
 	var FileLocation = flag.String("file", "./info.txt", "The location of the information to parse")
+	var Debug = flag.Bool("debug", false, "PrintDebuggingInfo true or false")
 	flag.Parse()
 
 	log.SetOutput(os.Stdout)
+
+	debug = *Debug
+
+	if debug {
+		log.Printf("Debugging turned on.\n")
+	}
 
 	c, err := importConfig(*ConfigFileLocation)
 	if err != nil {
